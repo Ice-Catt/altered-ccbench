@@ -76,27 +76,6 @@ static uint32_t swap(volatile cache_line_t* cl, volatile uint64_t reps);
 static size_t parse_size(char* optarg);
 static void create_rand_list_cl(volatile uint64_t* list, size_t n);
 
-inline void set_cpu(int cpu)
-{
-#if defined(__sparc__)
-    processor_bind(P_LWPID, P_MYID, cpu, NULL);
-#elif defined(__tile__)
-    if (tmc_cpus_set_my_cpu(tmc_cpus_find_nth_cpu(&cpus, cpu)) < 0)
-        tmc_task_die("Failure in 'tmc_cpus_set_my_cpu()'.");
-
-    if (cpu != tmc_cpus_get_my_cpu())
-        printf("******* I am not CPU %d\n", tmc_cpus_get_my_cpu());
-#else
-    cpu_set_t mask;
-    CPU_ZERO(&mask);
-    CPU_SET(cpu, &mask);
-    if (sched_setaffinity(0, sizeof(cpu_set_t), &mask) != 0) {
-        printf("Problem with setting processor affinity: %s\n",
-               strerror(errno));
-        exit(3);
-    }
-#endif
-}
 
 int
 main(int argc, char **argv) 
