@@ -27,6 +27,11 @@
  *
  */
 
+ // pfd essentially measures the time taken for a selected instruction to execute
+ // it uses rdtsc to measure the time before and after the instruction
+ // it does so in a way that minimizes the overhead of the measurement itself
+ // by measuring the before and after ticks, then subtracting the overhead of the rdtsc calls themselves
+
 #ifndef _PFD_H_
 #define _PFD_H_
 

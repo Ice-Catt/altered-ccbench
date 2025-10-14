@@ -9,7 +9,7 @@ ifeq ($(VERSION),DEBUG)
 CFLAGS =  -O0 -ggdb -Wall -g  -fno-inline
 endif
 
-UNAME := $(shell uname -n)
+UNAME ?= $(shell uname -n)
 
 ifeq ($(UNAME), lpd48core)
 PLATFORM = OPTERON
@@ -42,6 +42,11 @@ endif
 
 ifeq ($(UNAME), diascld9)
 PLATFORM = OPTERON2
+CC = gcc
+endif
+
+ifeq ($(UNAME), RYZEN53600)
+PLATFORM = RYZEN53600
 CC = gcc
 endif
 

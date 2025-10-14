@@ -27,6 +27,11 @@
  *
  */
 
+ // pfd essentially measures the time taken for a selected instruction to execute
+ // it uses rdtsc to measure the time before and after the instruction
+ // it does so in a way that minimizes the overhead of the measurement itself
+ // by measuring the before and after ticks, then subtracting the overhead of the rdtsc calls themselves
+
 #include "pfd.h"
 #include <math.h>
 #include "atomic_ops.h"
@@ -100,6 +105,8 @@ pfd_store_init(uint32_t num_entries)
 	  ad.avg = 20;
 #elif defined(NIAGARA)
 	  ad.avg = 76;
+#elif defined(RYZEN53600)
+    ad.avg = 32;
 #else
 	  printf("* warning: no default value for pfd correction is provided (fix in src/pfd.c)\n");
 #endif
