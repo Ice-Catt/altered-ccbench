@@ -50,6 +50,11 @@ PLATFORM = RYZEN53600
 CC = gcc
 endif
 
+ifeq ($(UNAME), i3_7020U)
+PLATFORM = i3_7020U
+CC = gcc
+endif
+
 ifeq ($(PLATFORM), )
 PLATFORM = DEFAULT
 CC = gcc

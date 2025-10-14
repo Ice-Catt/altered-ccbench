@@ -8,3 +8,6 @@ This is an altered version of ccbench, the code of which was written by:
   Tudor David, Rachid Guerraoui, Vasileios Trigonakis (alphabetical order), 
   SOSP '13 - Proceeding of the 24th ACM Symposium on Operating Systems Principles
 
+try:
+make UNAME=i3_7020U
+or RYZEN53600
