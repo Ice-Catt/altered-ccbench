@@ -161,9 +161,8 @@ const char* moesi_type_des[] =
 #define DEFAULT_CORES       2
 #define DEFAULT_REPS        10000
 #define DEFAULT_TEST        0
-#define DEFAULT_CORE1       0
-#define DEFAULT_CORE2       1
-#define DEFAULT_CORE3       2
+static uint32_t default_cores[] = {0,1,2};
+#define DEFAULT_CORES_ARRAY default_cores
 #define DEFAULT_CORE_OTHERS 0
 #define DEFAULT_FLUSH       0
 #define DEFAULT_VERBOSE     0
@@ -224,11 +223,16 @@ set_cpu(int cpu)
   cpu_set_t mask;
   CPU_ZERO(&mask);
   CPU_SET(cpu, &mask);
-  if (sched_setaffinity(0, sizeof(cpu_set_t), &mask) != 0) {
-    printf("Problem with setting processor affinity: %s\n",
-	   strerror(errno));
-    exit(3);
+
+
+  if (sched_setaffinity(0, sizeof(mask), &mask) != 0) {
+    
+      printf("Problem with setting processor affinity: %s\n",
+        strerror(errno));
+      exit(3);
   }
+
+  printf("Requested cpu: %d, now running on cpu: %d\n",cpu, sched_getcpu());
 #endif
 
 #ifdef OPTERON

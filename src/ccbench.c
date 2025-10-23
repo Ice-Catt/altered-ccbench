@@ -39,9 +39,7 @@ cpu_set_t cpus;
 moesi_type_t test_test = DEFAULT_TEST;
 uint32_t test_cores = DEFAULT_CORES;
 uint32_t test_reps = DEFAULT_REPS;
-uint32_t test_core1 = DEFAULT_CORE1;
-uint32_t test_core2 = DEFAULT_CORE2;
-uint32_t test_core3 = DEFAULT_CORE3;
+uint32_t *test_cores_array = DEFAULT_CORES_ARRAY;
 uint32_t test_core_others = DEFAULT_CORE_OTHERS;
 uint32_t test_flush = DEFAULT_FLUSH;
 uint32_t test_verbose = DEFAULT_VERBOSE;
@@ -102,9 +100,7 @@ main(int argc, char **argv)
       {"cores",                     required_argument, NULL, 'c'},
       {"repetitions",               required_argument, NULL, 'r'},
       {"test",                      required_argument, NULL, 't'},
-      {"core1",                     required_argument, NULL, 'x'},
-      {"core2",                     required_argument, NULL, 'y'},
-      {"core3",                     required_argument, NULL, 'z'},
+      {"cores_array",               required_argument, NULL, 'x'},
       {"core-others",               required_argument, NULL, 'o'},
       {"stride",                    required_argument, NULL, 's'},
       {"fence",                     required_argument, NULL, 'e'},
@@ -153,14 +149,8 @@ main(int argc, char **argv)
 		 "        Repetitions of the test case (default=" XSTR(DEFAULT_REPS) ")\n"
 		 "  -t, --test <int>\n"
 		 "        Test case to run (default=" XSTR(DEFAULT_TEST) "). See below for supported events\n"
-		 "  -x, --core1 <int>\n"
-		 "        1st core to use (default=" XSTR(DEFAULT_CORE1) ")\n"
-		 "  -y, --core2 <int>\n"
-		 "        2nd core to use (default=" XSTR(DEFAULT_CORE2) ")\n"
-		 "  -z, --core3 <int>\n"
-		 "        3rd core to use. Some (most) tests use only 2 cores (default=" XSTR(DEFAULT_CORE3) ")\n"
-		 "  -o, --core-others <int>\n"
-		 "        Offset for core that the processes with ID > 3 should bind (default=" XSTR(DEFAULT_CORE_OTHERS) ")\n"
+		 "  -x, --cores_array <int>\n"
+		 "        supply an array of cores to use. eg [1,2,3,4]"
 		 "  -f, --flush\n"
 		 "        Perform a cache line flush before the test (default=" XSTR(DEFAULT_FLUSH) ")\n"
 		 "  -s, --stride <int>\n"
@@ -198,14 +188,27 @@ main(int argc, char **argv)
 	case 't':
 	  test_test = atoi(optarg);
 	  break;
-	case 'x':
-	  test_core1 = atoi(optarg);
-	  break;
-	case 'y':
-	  test_core2 = atoi(optarg);
-	  break;
-	case 'z':
-	  test_core3 = atoi(optarg);
+	case 'x': // user provided a core array
+		char *copy = strdup(optarg);
+		copy[strlen(copy) - 1] = '\0'; // remove closing ]
+		char *p = copy + 1;            // skip opening [
+    	int *arr = malloc(test_cores * sizeof(int));
+
+		char *tok = strtok(p, ",");
+		for (int i = 0; i < test_cores && tok; i++) {
+			arr[i] = atoi(tok);
+			tok = strtok(NULL, ",");
+		}
+
+		free(copy);
+		memcpy(test_cores_array, arr, test_cores * sizeof(uint32_t));
+
+		printf("Using cores array: ");
+		for (i = 0; i < test_cores; i++) {
+			printf("%d ", test_cores_array[i]);
+		}
+		printf("\n");
+
 	  break;
 	case 'o':
 	  test_core_others = atoi(optarg);
@@ -317,15 +320,6 @@ main(int argc, char **argv)
       break;
     }
 
-  printf("\n");
-
-  printf("core1: %3u / core2: %3u ", test_core1, test_core2);
-  if (test_cores >= 3)
-    {
-      printf("/ core3: %3u", test_core3);
-    }
-  printf("\n");
-
   barriers_init(test_cores);
   seeds = seed_rand();
 
@@ -336,33 +330,20 @@ main(int argc, char **argv)
     {
       pid_t child = fork();
       if (child < 0) 
-	{
-	  P("Failure in fork():\n%s", strerror(errno));
-	} 
-      else if (child == 0) 
-	{
-	  goto fork_done;
-	}
+		{
+			P("Failure in fork():\n%s", strerror(errno));
+		} 
+			else if (child == 0) 
+		{
+			goto fork_done;
+		}
     }
   rank = 0;
 
  fork_done:
   ID = rank;
   size_t core = 0;
-  switch (ID)
-    {
-    case 0:
-      core = test_core1;
-      break;
-    case 1:
-      core = test_core2;
-      break;
-    case 2:
-      core = test_core3;
-      break;
-    default:
-      core = ID - test_core_others;
-    }
+  core = test_cores_array[rank];
 
 #if defined(NIAGARA)
   if (test_cores <= 8 && test_cores > 3)
@@ -384,7 +365,7 @@ main(int argc, char **argv)
   volatile uint64_t* cl = (volatile uint64_t*) cache_line;
 
   B0;
-  if (ID < 3)
+  if (ID < test_cores)
     {
       PFDINIT(test_reps);
     }
@@ -1016,7 +997,7 @@ main(int argc, char **argv)
 	  }
 	case LOAD_FROM_MEM_SIZE: /* 27 */
 	  {
-	    if (ID < 3)
+	    if (ID < test_cores)
 	      {
 		sum += load_next(cl, reps);
 	      }
@@ -1081,7 +1062,7 @@ main(int argc, char **argv)
   uint32_t id;
   for (id = 0; id < test_cores; id++)
     {
-      if (ID == id && ID < 3)
+      if (ID == id && ID < test_cores)
 	{
 	  switch (test_test)
 	    {
@@ -1089,7 +1070,7 @@ main(int argc, char **argv)
 	    case STORE_ON_OWNED:
 	      if (ID < 2)
 		{
-		  PRINT(" *** Core %2d ************************************************************************************", ID);
+		  PRINT(" *** Core %ld ************************************************************************************", core);
 		  PFDPN(0, test_reps, test_print);
 		  if (ID == 1)
 		    {
@@ -1100,26 +1081,26 @@ main(int argc, char **argv)
 	    case CAS_CONCURRENT:
 	      if (ID < 2)
 		{
-		  PRINT(" *** Core %2d ************************************************************************************", ID);
+		  PRINT(" *** Core %ld ************************************************************************************", core);
 		  PFDPN(0, test_reps, test_print);
 		}
 	      break;
 	    case LOAD_FROM_L1:
 	      if (ID < 1)
 		{
-		  PRINT(" *** Core %2d ************************************************************************************", ID);
+		  PRINT(" *** Core %ld ************************************************************************************", core);
 		  PFDPN(0, test_reps, test_print);
 		}
 	      break;
 	    case LOAD_FROM_MEM_SIZE:
-	      if (ID < 3)
+	      if (ID < test_cores)
 		{
-		  PRINT(" *** Core %2d ************************************************************************************", ID);
+		  PRINT(" *** Core %ld ************************************************************************************", core);
 		  PFDPN(0, test_reps, test_print);
 		}
 	      break;
 	    default:
-	      PRINT(" *** Core %2d ************************************************************************************", ID);
+	      PRINT(" *** Core %ld ************************************************************************************", core);
 	      PFDPN(0, test_reps, test_print);
 	    }
 	}
@@ -1436,7 +1417,7 @@ main(int argc, char **argv)
   B0;
 
 
-  if (ID < 3)
+  if (ID < test_cores)
     {
       PRINT(" value of cl is %-10u / sum is %llu", cache_line->word[0], (LLU) sum);
     }
