@@ -76,14 +76,33 @@ static inline ticks getticks()
   return get_cycle_count();
 }
 #elif defined(__aarch64__)
-static inline uint64_t getticks()
+static inline uint64_t read_cntvct_el0(void)
 {
     uint64_t vct;
-    asm volatile("mrs %0, cntvct_el0" : "=r" (vct));
+    asm volatile("mrs %0, cntvct_el0" : "=r"(vct));
     return vct;
 }
 
+static inline uint64_t read_cntfrq_el0(void)
+{
+    uint64_t freq;
+    asm volatile("mrs %0, cntfrq_el0" : "=r"(freq));
+    return freq;
+}
+
+/* AArch64 high-resolution counter, similar to rdtsc() */
+static inline ticks getticks(void)
+{
+    return read_cntvct_el0();
+}
+
+/* Optional: get counter frequency in Hz (for conversions) */
+static inline double getticks_freq(void)
+{
+    return (double)read_cntfrq_el0();
+}
 #endif
+
 
 #define DO_TIMINGS
 
