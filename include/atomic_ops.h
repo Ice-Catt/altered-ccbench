@@ -147,7 +147,7 @@ uint8_t oldval;
 
 #elif defined (__aarch64__)
 
-##include <stdint.h>
+#include <stdint.h>
 #include <stdatomic.h>
 
 // CAS: returns the old value (*always*, just like __sync_val_compare_and_swap)
