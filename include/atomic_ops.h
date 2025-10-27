@@ -150,64 +150,73 @@ uint8_t oldval;
 #include <stdint.h>
 #include <stdatomic.h>
 
-// Test-and-set uint8_t (returns old value)
+// Test-and-set (returns previous value)
 static inline uint8_t tas_uint8(volatile uint8_t *addr) {
     uint8_t expected = 0;
-    // Try to set to 1, return *previous* value.
     atomic_compare_exchange_strong((_Atomic uint8_t *)addr, &expected, 1);
     return expected;
 }
 
-// Compare-and-swap (pointer and integer versions)
-#define CAS_PTR(a,b,c) atomic_compare_exchange_strong((_Atomic(void**))(a), (void**)(b), (void*)(c))
-#define CAS_U8(a,b,c)  atomic_compare_exchange_strong((_Atomic uint8_t *)(a), (uint8_t *)(b), (uint8_t)(c))
-#define CAS_U16(a,b,c) atomic_compare_exchange_strong((_Atomic uint16_t *)(a), (uint16_t *)(b), (uint16_t)(c))
-#define CAS_U32(a,b,c) atomic_compare_exchange_strong((_Atomic uint32_t *)(a), (uint32_t *)(b), (uint32_t)(c))
-#define CAS_U64(a,b,c) atomic_compare_exchange_strong((_Atomic uint64_t *)(a), (uint64_t *)(b), (uint64_t)(c))
+// Swap pointer (returns old value)
+static inline void* swap_pointer(void **ptr, void *x) {
+    return atomic_exchange((_Atomic(void**) )ptr, x);
+}
 
-// Swap (returns old value)
-#define SWAP_PTR(a,b)  atomic_exchange((_Atomic(void**))(a), (void*)(b))
+// Compare-and-swap: return old value, not just success/fail!
+static inline uint32_t cas_u32(_Atomic uint32_t *addr, uint32_t expected, uint32_t desired) {
+    atomic_compare_exchange_strong(addr, &expected, desired);
+    return expected;
+}
+static inline uint64_t cas_u64(_Atomic uint64_t *addr, uint64_t expected, uint64_t desired) {
+    atomic_compare_exchange_strong(addr, &expected, desired);
+    return expected;
+}
+static inline void* cas_ptr(_Atomic(void*) *addr, void* expected, void* desired) {
+    atomic_compare_exchange_strong(addr, &expected, desired);
+    return expected;
+}
+
+#define CAS_U32(a,b,c) cas_u32((_Atomic uint32_t *)(a), (b), (c))
+#define CAS_U64(a,b,c) cas_u64((_Atomic uint64_t *)(a), (b), (c))
+#define CAS_PTR(a,b,c) cas_ptr((_Atomic(void **) )(a), (b), (c))
+#define CAS_U8(a,b,c)  ({ uint8_t _exp=(b),_cas=_exp; atomic_compare_exchange_strong((_Atomic uint8_t*)(a), &_cas, (c)); _cas; })
+#define CAS_U16(a,b,c) ({ uint16_t _exp=(b),_cas=_exp; atomic_compare_exchange_strong((_Atomic uint16_t*)(a), &_cas, (c)); _cas; })
+
+#define SWAP_PTR(a,b)  atomic_exchange((_Atomic(void**) )(a), (void*)(b))
 #define SWAP_U8(a,b)   atomic_exchange((_Atomic uint8_t *)(a),  (uint8_t)(b))
 #define SWAP_U16(a,b)  atomic_exchange((_Atomic uint16_t *)(a), (uint16_t)(b))
 #define SWAP_U32(a,b)  atomic_exchange((_Atomic uint32_t *)(a), (uint32_t)(b))
 #define SWAP_U64(a,b)  atomic_exchange((_Atomic uint64_t *)(a), (uint64_t)(b))
 
-// Fetch-and-increment ("nv" macro: returns value after change)
 #define FAI_U8(a)  atomic_fetch_add((_Atomic uint8_t *)(a), 1)
 #define FAI_U16(a) atomic_fetch_add((_Atomic uint16_t *)(a), 1)
 #define FAI_U32(a) atomic_fetch_add((_Atomic uint32_t *)(a), 1)
 #define FAI_U64(a) atomic_fetch_add((_Atomic uint64_t *)(a), 1)
 
-// Fetch-and-decrement
 #define FAD_U8(a)  atomic_fetch_sub((_Atomic uint8_t *)(a), 1)
 #define FAD_U16(a) atomic_fetch_sub((_Atomic uint16_t *)(a), 1)
 #define FAD_U32(a) atomic_fetch_sub((_Atomic uint32_t *)(a), 1)
 #define FAD_U64(a) atomic_fetch_sub((_Atomic uint64_t *)(a), 1)
 
-// Increment-and-fetch (no direct intrinsic, so add-then-read)
 #define IAF_U8(a)  (atomic_fetch_add((_Atomic uint8_t *)(a), 1) + 1)
 #define IAF_U16(a) (atomic_fetch_add((_Atomic uint16_t *)(a), 1) + 1)
 #define IAF_U32(a) (atomic_fetch_add((_Atomic uint32_t *)(a), 1) + 1)
 #define IAF_U64(a) (atomic_fetch_add((_Atomic uint64_t *)(a), 1) + 1)
 
-// Decrement-and-fetch
 #define DAF_U8(a)  (atomic_fetch_sub((_Atomic uint8_t *)(a), 1) - 1)
 #define DAF_U16(a) (atomic_fetch_sub((_Atomic uint16_t *)(a), 1) - 1)
 #define DAF_U32(a) (atomic_fetch_sub((_Atomic uint32_t *)(a), 1) - 1)
 #define DAF_U64(a) (atomic_fetch_sub((_Atomic uint64_t *)(a), 1) - 1)
 
-// Test-and-set
 #define TAS_U8(a) tas_uint8(a)
 
-// Memory barrier macros (AArch64 equivalents of membar)
 #define MEM_BARRIER   asm volatile("dsb ish" ::: "memory")
 #define _mm_lfence()  asm volatile("dsb ld" ::: "memory")
 #define _mm_sfence()  asm volatile("dsb st" ::: "memory")
 #define _mm_mfence()  asm volatile("dsb ish" ::: "memory")
-
-// Cache line flush: Not available in user mode, so NOP
 #define _mm_clflush(x) asm volatile("nop")
-// End of AArch64 code
+
+#endif // __aarch64__
 
 #else
 
