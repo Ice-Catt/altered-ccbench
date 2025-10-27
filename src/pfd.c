@@ -109,6 +109,8 @@ pfd_store_init(uint32_t num_entries)
     ad.avg = 32;
 #elif defined(i3_7020U)
     ad.avg = 25;
+#elif defined(xgene1)
+    ad.avg = 40;
 #else
 	  printf("* warning: no default value for pfd correction is provided (fix in src/pfd.c)\n");
 #endif
