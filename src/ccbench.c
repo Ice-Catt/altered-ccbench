@@ -254,7 +254,7 @@ main(int argc, char **argv)
 	  exit(0);
 	default:
 	  printf("step 2\n");
-	  exit(1);
+	  exit(0);
 	}
     }
   printf("setp 3\n");
