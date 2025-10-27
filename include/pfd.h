@@ -80,7 +80,6 @@ static inline uint64_t getticks()
 {
     uint64_t vct;
     asm volatile("mrs %0, cntvct_el0" : "=r" (vct));
-    printf("ticks: %lu\n", vct);
     return vct;
 }
 
