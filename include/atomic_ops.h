@@ -215,6 +215,8 @@ static inline void* cas_ptr(_Atomic(void*) *addr, void* expected, void* desired)
 #define _mm_sfence()  asm volatile("dsb st" ::: "memory")
 #define _mm_mfence()  asm volatile("dsb ish" ::: "memory")
 #define _mm_clflush(x) asm volatile("nop")
+#define _mm_pause() asm volatile("yield" ::: "memory")
+
 
 // end __aarch64__
 
