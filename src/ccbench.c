@@ -132,7 +132,7 @@ main(int argc, char **argv)
       i = 0;
       c = getopt_long(argc, argv, "hc:r:t:x:m:y:z:o:e:fvup:s:", long_options, &i);
 	  printf("c is %d\n", c);
-      if(c == -1)
+      if((c == -1) | (c == 255))
 	break;
 
       if(c == 0 && long_options[i].flag == 0)
