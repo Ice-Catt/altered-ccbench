@@ -145,7 +145,7 @@ uint8_t oldval;
 
 //end of tilera code
 
-#ifdef __aarch64__
+#elif defined (__aarch64__)
 
 #include <stdint.h>
 #include <stdatomic.h>
@@ -216,7 +216,7 @@ static inline void* cas_ptr(_Atomic(void*) *addr, void* expected, void* desired)
 #define _mm_mfence()  asm volatile("dsb ish" ::: "memory")
 #define _mm_clflush(x) asm volatile("nop")
 
-#endif // __aarch64__
+// end __aarch64__
 
 #else
 
