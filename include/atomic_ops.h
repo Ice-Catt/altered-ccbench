@@ -239,7 +239,9 @@ static inline uint8_t tas_uint8(volatile _Atomic uint8_t *addr) {
 #define _mm_sfence()  atomic_thread_fence(memory_order_release)
 #define _mm_mfence()  atomic_thread_fence(memory_order_seq_cst)
 #define _mm_clflush(x)  ((void)(x))  /* no-op on ARM */
+#define _mm_pause() asm volatile("yield" ::: "memory")
 
+// end of aarch64 code
 #else
 
 /*
