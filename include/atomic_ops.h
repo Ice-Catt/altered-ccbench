@@ -176,6 +176,18 @@ static inline void* swap_pointer(volatile void* ptr, void *x) {
         :"memory");
 
   return x;
+# elif defined(__aarch64__)
+  uint64_t old, res;
+  do {
+    __asm__ __volatile__(
+      "ldxr %0, [%2]\n"
+      "stxr %w1, %3, [%2]\n"
+      : "=&r" (old), "=&r" (res)
+      : "r" (ptr), "r" ((uint64_t)x)
+      : "memory"
+    );
+  } while (res);
+  return (void*)old;
 #  endif
 }
 
