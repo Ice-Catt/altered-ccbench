@@ -131,7 +131,7 @@ main(int argc, char **argv)
     {
       i = 0;
       c = getopt_long(argc, argv, "hc:r:t:x:m:y:z:o:e:fvup:s:", long_options, &i);
-
+	  printf("c is %d\n", c);
       if(c == -1)
 	break;
 
@@ -254,7 +254,7 @@ main(int argc, char **argv)
 	  exit(0);
 	default:
 	  printf("step 2\n");
-	  exit(0);
+	  exit(1);
 	}
     }
   printf("setp 3\n");
