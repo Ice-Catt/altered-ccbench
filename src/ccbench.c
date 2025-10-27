@@ -257,9 +257,11 @@ main(int argc, char **argv)
 	}
     }
 
+  printf("step 1\n");
 
   test_cache_line_num = test_mem_size / sizeof(cache_line_t);
 
+  printf("step 2\n");
   if ((test_test == STORE_ON_EXCLUSIVE || test_test == STORE_ON_INVALID || test_test == LOAD_FROM_INVALID
        || test_test == LOAD_FROM_EXCLUSIVE || test_test == LOAD_FROM_SHARED) && !test_flush)
     {
@@ -270,7 +272,7 @@ main(int argc, char **argv)
     {
       assert(test_stride < test_cache_line_num);
     }
-
+  printf("step 3\n");
 
   ID = 0;
   printf("test: %20s  / #cores: %d / #repetitions: %d / stride: %d (%u kiB)", moesi_type_des[test_test], 
