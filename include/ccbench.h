@@ -256,7 +256,7 @@ set_cpu(int cpu)
 #elif defined(PLATFORM_NUMA)
   printf("* You need to define how cores correspond to mem nodes in ccbench.h\n");
 #endif 
-  
+printf("got here 1\n");
 }
 
 inline void 

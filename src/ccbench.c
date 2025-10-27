@@ -382,6 +382,7 @@ main(int argc, char **argv)
 #endif
 
   set_cpu(core);
+  printf("got here 2\n");
 
 #if defined(__tile__)
   tmc_cmem_init(0);		/*   initialize shared memory */
@@ -401,9 +402,10 @@ main(int argc, char **argv)
   /*  *********************************************************************************\/ */
 
   uint64_t sum = 0;
-
+  printf("got here 3\n");
   volatile uint64_t reps;
   for (reps = 0; reps < test_reps; reps++)
+  printf("got here 4\n");
     {
       if (test_flush)
 	{
@@ -411,6 +413,7 @@ main(int argc, char **argv)
 	  _mm_clflush((void*) cache_line);
 	  _mm_mfence();
 	}
+	printf("got here 5\n");
 
       B0;			/* BARRIER 0 */
 
