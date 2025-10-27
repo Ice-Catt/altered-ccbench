@@ -58,7 +58,7 @@ endif
 ifeq ($(UNAME), xgene1)
 PLATFORM = xgene1
 CC = gcc
-PLATFORM_NUMA = 1
+#PLATFORM_NUMA = 1
 endif
 
 ifeq ($(PLATFORM), )
