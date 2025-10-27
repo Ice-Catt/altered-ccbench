@@ -145,51 +145,100 @@ uint8_t oldval;
 
 //end of tilera code
 
-#elif defined (__aarch64__)
+#elif defined(__aarch64__)
 
 #include <stdint.h>
 #include <stdatomic.h>
 
-// CAS: returns the old value (*always*, just like __sync_val_compare_and_swap)
-static inline uint32_t cas_u32(_Atomic uint32_t *addr, uint32_t expected, uint32_t desired) {
-    uint32_t old = atomic_load(addr);
-    atomic_compare_exchange_strong(addr, &expected, desired);
-    return old;
-}
-static inline uint64_t cas_u64(_Atomic uint64_t *addr, uint64_t expected, uint64_t desired) {
-    uint64_t old = atomic_load(addr);
-    atomic_compare_exchange_strong(addr, &expected, desired);
-    return old;
-}
-static inline void *cas_ptr(_Atomic(void *) *addr, void *expected, void *desired) {
-    void *old = atomic_load(addr);
-    atomic_compare_exchange_strong(addr, &expected, desired);
-    return old;
-}
+/*
+ *  AArch64 atomic operations
+ *
+ *  These implementations mimic GCC __sync_* builtins:
+ *  - CAS_* return the *old* value (whether or not the swap succeeded)
+ *  - SWAP_* perform an atomic exchange
+ *  - FAI/FAD/IAF/DAF macros use atomic_fetch_* and atomic_*_fetch
+ */
+
+/* ---------- Compare-and-swap (return old value) ---------- */
 
 static inline uint8_t cas_u8(_Atomic uint8_t *addr, uint8_t expected, uint8_t desired) {
-    uint8_t old = atomic_load(addr);
-    atomic_compare_exchange_strong(addr, &expected, desired);
-    return old;
-}
-static inline uint16_t cas_u16(_Atomic uint16_t *addr, uint16_t expected, uint16_t desired) {
-    uint16_t old = atomic_load(addr);
-    atomic_compare_exchange_strong(addr, &expected, desired);
+    uint8_t old = expected;
+    atomic_compare_exchange_strong(addr, &old, desired);
     return old;
 }
 
+static inline uint16_t cas_u16(_Atomic uint16_t *addr, uint16_t expected, uint16_t desired) {
+    uint16_t old = expected;
+    atomic_compare_exchange_strong(addr, &old, desired);
+    return old;
+}
+
+static inline uint32_t cas_u32(_Atomic uint32_t *addr, uint32_t expected, uint32_t desired) {
+    uint32_t old = expected;
+    atomic_compare_exchange_strong(addr, &old, desired);
+    return old;
+}
+
+static inline uint64_t cas_u64(_Atomic uint64_t *addr, uint64_t expected, uint64_t desired) {
+    uint64_t old = expected;
+    atomic_compare_exchange_strong(addr, &old, desired);
+    return old;
+}
+
+static inline void *cas_ptr(_Atomic(void *) *addr, void *expected, void *desired) {
+    void *old = expected;
+    atomic_compare_exchange_strong(addr, &old, desired);
+    return old;
+}
+
+/* ---------- CAS macros ---------- */
+#define CAS_U8(a,b,c)  cas_u8((_Atomic uint8_t *)(a),  (b), (c))
+#define CAS_U16(a,b,c) cas_u16((_Atomic uint16_t *)(a), (b), (c))
 #define CAS_U32(a,b,c) cas_u32((_Atomic uint32_t *)(a), (b), (c))
 #define CAS_U64(a,b,c) cas_u64((_Atomic uint64_t *)(a), (b), (c))
 #define CAS_PTR(a,b,c) cas_ptr((_Atomic(void *) *)(a), (b), (c))
-#define CAS_U8(a,b,c) cas_u8((_Atomic uint8_t *)(a), (b), (c))
-#define CAS_U16(a,b,c) cas_u16((_Atomic uint16_t *)(a), (b), (c))
 
-#define SWAP_PTR(a,b)  atomic_exchange((_Atomic(void *) *)(a), (void *)(b))
+/* ---------- Swap (atomic exchange) ---------- */
 #define SWAP_U8(a,b)   atomic_exchange((_Atomic uint8_t *)(a),  (uint8_t)(b))
 #define SWAP_U16(a,b)  atomic_exchange((_Atomic uint16_t *)(a), (uint16_t)(b))
 #define SWAP_U32(a,b)  atomic_exchange((_Atomic uint32_t *)(a), (uint32_t)(b))
 #define SWAP_U64(a,b)  atomic_exchange((_Atomic uint64_t *)(a), (uint64_t)(b))
-// end __aarch64__
+#define SWAP_PTR(a,b)  atomic_exchange((_Atomic(void *) *)(a),  (void *)(b))
+
+/* ---------- Fetch-and-increment/decrement ---------- */
+#define FAI_U8(a)  atomic_fetch_add((_Atomic uint8_t *)(a),  1)
+#define FAI_U16(a) atomic_fetch_add((_Atomic uint16_t *)(a), 1)
+#define FAI_U32(a) atomic_fetch_add((_Atomic uint32_t *)(a), 1)
+#define FAI_U64(a) atomic_fetch_add((_Atomic uint64_t *)(a), 1)
+
+#define FAD_U8(a)  atomic_fetch_sub((_Atomic uint8_t *)(a),  1)
+#define FAD_U16(a) atomic_fetch_sub((_Atomic uint16_t *)(a), 1)
+#define FAD_U32(a) atomic_fetch_sub((_Atomic uint32_t *)(a), 1)
+#define FAD_U64(a) atomic_fetch_sub((_Atomic uint64_t *)(a), 1)
+
+/* ---------- Increment-and-fetch / Decrement-and-fetch ---------- */
+#define IAF_U8(a)  atomic_add_fetch((_Atomic uint8_t *)(a),  1)
+#define IAF_U16(a) atomic_add_fetch((_Atomic uint16_t *)(a), 1)
+#define IAF_U32(a) atomic_add_fetch((_Atomic uint32_t *)(a), 1)
+#define IAF_U64(a) atomic_add_fetch((_Atomic uint64_t *)(a), 1)
+
+#define DAF_U8(a)  atomic_sub_fetch((_Atomic uint8_t *)(a),  1)
+#define DAF_U16(a) atomic_sub_fetch((_Atomic uint16_t *)(a), 1)
+#define DAF_U32(a) atomic_sub_fetch((_Atomic uint32_t *)(a), 1)
+#define DAF_U64(a) atomic_sub_fetch((_Atomic uint64_t *)(a), 1)
+
+/* ---------- Test-and-set (set to 0xFF, return old value) ---------- */
+static inline uint8_t tas_uint8(volatile _Atomic uint8_t *addr) {
+    return atomic_exchange(addr, 0xFF);
+}
+#define TAS_U8(a) tas_uint8((_Atomic uint8_t *)(a))
+
+/* ---------- Memory barriers ---------- */
+#define MEM_BARRIER   atomic_thread_fence(memory_order_seq_cst)
+#define _mm_lfence()  atomic_thread_fence(memory_order_acquire)
+#define _mm_sfence()  atomic_thread_fence(memory_order_release)
+#define _mm_mfence()  atomic_thread_fence(memory_order_seq_cst)
+#define _mm_clflush(x)  ((void)(x))  /* no-op on ARM */
 
 #else
 
