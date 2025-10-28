@@ -75,7 +75,7 @@ pfd_store_init(uint32_t num_entries)
   for (i = 0; i < num_entries; i++)
     {
       PFDI(0);
-      printf("ticks start %lu\n", _pfd_s[0]);
+      //printf("ticks start %lu\n", _pfd_s[0]);
       asm volatile ("");
       PFDO(0, i);
       //printf("ticks got %lu\n", pfd_store[0][i]);
@@ -112,7 +112,7 @@ pfd_store_init(uint32_t num_entries)
 #elif defined(i3_7020U)
     ad.avg = 25;
 #elif defined(xgene1)
-    ad.avg = 40;
+    ad.avg = 0;
 #else
 	  printf("* warning: no default value for pfd correction is provided (fix in src/pfd.c)\n");
 #endif
