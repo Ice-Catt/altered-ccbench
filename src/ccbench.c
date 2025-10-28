@@ -1695,7 +1695,7 @@ store_0_eventually_nf(volatile cache_line_t* cl, volatile uint64_t reps)
       PFDI(0);
       w[0] = cln;
       PFDO(0, reps);
-  	  printf("ticks got %lu\n", pfd_store[0][reps]);
+  	  //printf("ticks got %lu\n", pfd_store[0][reps]);
     }
   while (cln > 0);
 }
