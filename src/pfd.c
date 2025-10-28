@@ -75,9 +75,10 @@ pfd_store_init(uint32_t num_entries)
   for (i = 0; i < num_entries; i++)
     {
       PFDI(0);
+      printf("ticks start %lu\n", _pfd_s[0]);
       asm volatile ("");
       PFDO(0, i);
-      printf("ticks got %lu\n", pfd_store[0][i]);
+      //printf("ticks got %lu\n", pfd_store[0][i]);
     }
 
   abs_deviation_t ad;
