@@ -76,7 +76,7 @@ pfd_store_init(uint32_t num_entries)
     {
       PFDI(0);
       //printf("ticks start %lu\n", _pfd_s[0]);
-      asm volatile ("");
+      asm volatile (""); // gets correction by timing empty assembly
       PFDO(0, i);
       //printf("ticks got %lu\n", pfd_store[0][i]);
     }

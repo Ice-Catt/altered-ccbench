@@ -78,9 +78,14 @@ static inline ticks getticks()
   #elif defined(__aarch64__)
   static inline uint64_t getticks()
   {
-      uint64_t vct;
-      asm volatile("mrs %0, cntvct_el0" : "=r" (vct));
-      return vct;
+    uint64_t vct;
+    asm volatile("isb\n\t"
+                 "mrs %0, cntvct_el0\n\t"
+                 "isb"
+                 : "=r" (vct)
+                 :
+                 : "memory");
+    return vct;
   }
 
   #endif
