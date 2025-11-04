@@ -699,22 +699,18 @@ main(int argc, char **argv)
 	  }
 	case CAS: /* 12 */
 	  {
-	    switch (ID)
-	      {
-	      case 0:
-		sum += cas_0_eventually(cache_line, reps);
-		B1;		/* BARRIER 1 */
-		break;
-	      case 1:
+		if (ID == test_cores_array[0]){
+			sum += cas_0_eventually(cache_line, reps);
+			B1;		/* BARRIER 1 */
+		}
+		else if (ID == test_cores_array[1]){
 		B1;		/* BARRIER 1 */
 		sum += cas_0_eventually(cache_line, reps);
-		break;
-	      default:
-		B1;		/* BARRIER 1 */
-		break;
-	      }
-	    break;
-	  }
+		}
+		else {
+			B1;		/* BARRIER 1 */
+		}
+	}
 	case FAI: /* 13 */
 	  {
 	    switch (ID)
@@ -776,25 +772,21 @@ main(int argc, char **argv)
 	  }
 	case CAS_ON_MODIFIED: /* 16 */
 	  {
-	    switch (ID)
-	      {
-	      case 0:
-		store_0_eventually(cache_line, reps);
-		if (test_ao_success)
-		  {
-		    cache_line->word[0] = reps & 0x01;
-		  }
-		B1;		/* BARRIER 1 */
-		break;
-	      case 1:
-		B1;		/* BARRIER 1 */
-		sum += cas_0_eventually(cache_line, reps);
-		break;
-	      default:
-		B1;		/* BARRIER 1 */
-		break;
-	      }
-	    break;
+		if (ID == test_cores_array[0]){
+			store_0_eventually(cache_line, reps);
+			if (test_ao_success)
+			{
+				cache_line->word[0] = reps & 0x01;
+			}
+			B1;		/* BARRIER 1 */
+		}
+		else if (ID == test_cores_array[1]){
+			B1;		/* BARRIER 1 */
+			sum += cas_0_eventually(cache_line, reps);
+		}
+		else {
+			B1;
+		}
 	  }
 	case FAI_ON_MODIFIED: /* 17 */
 	  {
