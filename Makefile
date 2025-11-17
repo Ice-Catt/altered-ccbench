@@ -55,6 +55,11 @@ PLATFORM = i3_7020U
 CC = gcc
 endif
 
+ifeq ($(UNAME), XeonGold6142)
+PLATFORM = XeonGold6142
+CC = gcc
+endif
+
 ifeq ($(PLATFORM), )
 PLATFORM = DEFAULT
 CC = gcc
