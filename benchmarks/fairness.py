@@ -45,6 +45,7 @@ def benchmark_tests():
 
     # visualise fairness
     plt.figure(figsize=(12, 6))  # width=16 inches, height=8 inches
+    test_fairness = test_fairness.sort_values("test")
     bars = plt.bar(test_fairness["test"], test_fairness["fairness"])
     plt.ylabel("Fairness Index")
     plt.xlabel("Test Name")
@@ -53,6 +54,7 @@ def benchmark_tests():
     plt.tight_layout()
     plt.yticks(np.arange(0, 1.1, 0.1))  # 0 to 1 inclusive
     plt.xlim(-0.5, len(test_fairness["test"]) - 0.5)
+    plt.title("Fairness of Different Atomic Operations, Over Core Permutations")
     # annotate values inside each bar
     for bar in bars:
         height = bar.get_height()
@@ -87,8 +89,6 @@ def benchmark_core_placement():
             print(f"From core: {from_core}, to {to_core}, Jain's Fairness Index: {fairness:.4f}")
     
     # visualise fairness
-
-    # pivot into a 2D grid
     grid = from_to_fairness.pivot(index="to_core", columns="from_core", values="fairness")
 
     fig, ax = plt.subplots()
@@ -101,14 +101,18 @@ def benchmark_core_placement():
             val = grid.loc[to, frm]
             ax.text(j, i, f"{val:.2f}", ha="center", va="center", color="white")
 
+    # set ticks at integer positions
+    ax.set_xticks(range(len(grid.columns)))
+    ax.set_yticks(range(len(grid.index)))
+    ax.set_xticklabels([int(x) for x in grid.columns])
+    ax.set_yticklabels([int(y) for y in grid.index])
     ax.set_xlabel("From Core")
     ax.set_ylabel("To Core")
-    ax.set_xticks(range(len(grid.columns)))
-    ax.set_xticklabels(grid.columns)
-    ax.set_yticks(range(len(grid.index)))
-    ax.set_yticklabels(grid.index)
-    fig.tight_layout()
+    ax.tick_params(axis='x', which='both', bottom=True, top=True, labeltop=True, labelbottom=True)
+    ax.tick_params(axis='y', which='both', left=True, right=True, labelleft=True, labelright=True)
+    ax.set_title("Fairness Between Cores, Over Different Atomic Operations")
 
+    fig.tight_layout()
     plt.savefig("./figs/from_to_fairness.png")
 
 
