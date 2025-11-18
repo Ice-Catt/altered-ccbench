@@ -91,6 +91,21 @@ def benchmark_core_placement():
     # visualise fairness
     grid = from_to_fairness.pivot(index="to_core", columns="from_core", values="fairness")
 
+    # reorder cores: even first, then odd
+    cols = list(grid.columns)
+    rows = list(grid.index)
+
+    even_cols = [c for c in cols if c % 2 == 0]
+    odd_cols  = [c for c in cols if c % 2 == 1]
+    new_col_order = even_cols + odd_cols
+
+    even_rows = [r for r in rows if r % 2 == 0]
+    odd_rows  = [r for r in rows if r % 2 == 1]
+    new_row_order = even_rows + odd_rows
+
+    grid = grid.reindex(index=new_row_order, columns=new_col_order)
+
+
     cell_size = 0.25  # inches per cell
     fig, ax = plt.subplots(figsize=(cell_size * grid.shape[1],
                                     cell_size * grid.shape[0]))
@@ -130,14 +145,26 @@ def benchmark_core_placement():
     plt.savefig("./figs/from_to_fairness.png")
 
 
-def heatmap_fai_raw():
+def visualise_latency():
     for test_name in df["test"].unique():
-        fai = df[df["test"] == "FAI"]
-        if fai.empty:
-            print("No FAI rows found.")
-            return
+        test_table = df[df["test"] == test_name]
 
-        grid = fai.pivot(index="to_core", columns="from_core", values="avg_latency")
+        grid = test_table.pivot(index="to_core", columns="from_core", values="avg_latency")
+
+        # reorder cores: even first, then odd
+        cols = list(grid.columns)
+        rows = list(grid.index)
+
+        even_cols = [c for c in cols if c % 2 == 0]
+        odd_cols  = [c for c in cols if c % 2 == 1]
+        new_col_order = even_cols + odd_cols
+
+        even_rows = [r for r in rows if r % 2 == 0]
+        odd_rows  = [r for r in rows if r % 2 == 1]
+        new_row_order = even_rows + odd_rows
+
+        # apply the new order
+        grid = grid.reindex(index=new_row_order, columns=new_col_order)
 
         # use big figure so 64×64 stays readable
         fig, ax = plt.subplots(figsize=(18, 18))
@@ -169,17 +196,18 @@ def heatmap_fai_raw():
 
         ax.set_xlabel("From Core")
         ax.set_ylabel("To Core")
-        ax.set_title("FAI Raw Avg Latency")
+        ax.set_title(f"{test_name} Raw Avg Latency")
 
         fig.tight_layout()
         plt.savefig(f"./figs/spam/{test_name}_raw_latency.png", dpi=600)
+        plt.close(fig)
         print(f"{test_name} is done")
 
 
 
 
-benchmark_tests()
+#benchmark_tests()
 print("\n")
-benchmark_core_placement()
-heatmap_fai_raw()
+#benchmark_core_placement()
+visualise_latency()
 
