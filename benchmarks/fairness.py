@@ -91,30 +91,89 @@ def benchmark_core_placement():
     # visualise fairness
     grid = from_to_fairness.pivot(index="to_core", columns="from_core", values="fairness")
 
-    fig, ax = plt.subplots()
-    cax = ax.imshow(grid, aspect="auto", cmap="viridis")
+    cell_size = 0.25  # inches per cell
+    fig, ax = plt.subplots(figsize=(cell_size * grid.shape[1],
+                                    cell_size * grid.shape[0]))
+    cax = ax.imshow(grid, cmap="Greens", interpolation="nearest")
     fig.colorbar(cax, label="Fairness Index")
 
     # annotate values
-    for i, to in enumerate(grid.index):
-        for j, frm in enumerate(grid.columns):
-            val = grid.loc[to, frm]
-            ax.text(j, i, f"{val:.2f}", ha="center", va="center", color="white")
+    if grid.size <= 40:   # 6x6 or smaller, adjust as you like
+        for i, to in enumerate(grid.index):
+            for j, frm in enumerate(grid.columns):
+                val = grid.loc[to, frm]
+                ax.text(j, i, f"{val:.2f}", ha="center", va="center", color="white")
 
     # set ticks at integer positions
-    ax.set_xticks(range(len(grid.columns)))
-    ax.set_yticks(range(len(grid.index)))
-    ax.set_xticklabels([int(x) for x in grid.columns])
-    ax.set_yticklabels([int(y) for y in grid.index])
+    step = 1
+    ax.set_xticks(range(0, len(grid.columns), step))
+    ax.set_xticklabels([int(x) for x in grid.columns[::step]])
+
+    ax.set_yticks(range(0, len(grid.index), step))
+    ax.set_yticklabels([int(y) for y in grid.index[::step]])
     ax.set_xlabel("From Core")
     ax.set_ylabel("To Core")
     ax.tick_params(axis='x', which='both', bottom=True, top=True, labeltop=True, labelbottom=True)
     ax.tick_params(axis='y', which='both', left=True, right=True, labelleft=True, labelright=True)
     ax.set_title("Fairness Between Cores, Over Different Atomic Operations")
 
+    # overlay values in cells
+    for i in range(grid.shape[0]):
+        for j in range(grid.shape[1]):
+            val = grid.iloc[i, j]
+            if np.isnan(val):
+                continue
+            color = "white" if val > 0.5 else "black"
+            ax.text(j, i, f"{val:.2f}", ha="center", va="center", color=color, fontsize=6)
+
     fig.tight_layout()
     plt.savefig("./figs/from_to_fairness.png")
 
+
+def heatmap_fai_raw():
+    for test_name in df["test"].unique():
+        fai = df[df["test"] == "FAI"]
+        if fai.empty:
+            print("No FAI rows found.")
+            return
+
+        grid = fai.pivot(index="to_core", columns="from_core", values="avg_latency")
+
+        # use big figure so 64×64 stays readable
+        fig, ax = plt.subplots(figsize=(18, 18))
+
+        cax = ax.imshow(grid, cmap="Blues", aspect="equal")
+        fig.colorbar(cax, label="Avg Latency")
+
+        # annotate but tiny font; skip NaN
+        for i in range(grid.shape[0]):
+            for j in range(grid.shape[1]):
+                val = grid.iloc[i, j]
+                if np.isnan(val):
+                    continue
+                ax.text(
+                    j, i, f"{val:.0f}",
+                    ha="center",
+                    va="center",
+                    color="black",
+                    fontsize=4      # critical for 64×64
+                )
+
+        ax.set_xticks(range(len(grid.columns)))
+        ax.set_yticks(range(len(grid.index)))
+        ax.set_xticklabels(grid.columns, fontsize=6)
+        ax.set_yticklabels(grid.index, fontsize=6)
+
+        ax.tick_params(axis='x', bottom=True, top=True, labeltop=True, labelbottom=True)
+        ax.tick_params(axis='y', left=True, right=True, labelright=True)
+
+        ax.set_xlabel("From Core")
+        ax.set_ylabel("To Core")
+        ax.set_title("FAI Raw Avg Latency")
+
+        fig.tight_layout()
+        plt.savefig(f"./figs/spam/{test_name}_raw_latency.png", dpi=600)
+        print(f"{test_name} is done")
 
 
 
@@ -122,4 +181,5 @@ def benchmark_core_placement():
 benchmark_tests()
 print("\n")
 benchmark_core_placement()
+heatmap_fai_raw()
 
