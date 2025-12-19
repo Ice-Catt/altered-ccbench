@@ -7,7 +7,7 @@ import numpy as np
 
 # csv format is:
 # test,from_core,to_core,avg_latency
-CSV = "./results/ccbench_summary.csv"
+CSV = "./data/server_cpu/results/ccbench_summary.csv"
 df = pd.read_csv(
     CSV,
     dtype={
@@ -203,11 +203,116 @@ def visualise_latency():
         plt.close(fig)
         print(f"{test_name} is done")
 
+def visualise_socket_latency_comparison_normalised():
+    rows = []
+
+    for test in df["test"].unique():
+        # cas concurrent isnt pinned to cores, bad test
+        if test == "CAS_CONCURRENT": 
+            continue  # skip this test
+
+        test_df = df[df["test"] == test]
+
+        same_avg = test_df[
+            (test_df["from_core"] % 2) == (test_df["to_core"] % 2)
+        ]["avg_latency"].mean()
+
+        cross_avg = test_df[
+            (test_df["from_core"] % 2) != (test_df["to_core"] % 2)
+        ]["avg_latency"].mean()
+
+        if np.isnan(same_avg) or np.isnan(cross_avg):
+            continue
+
+        if same_avg >= cross_avg:
+            slow_path = "same"
+            slow = same_avg
+            fast = cross_avg
+        else:
+            slow_path = "cross"
+            slow = cross_avg
+            fast = same_avg
+
+        rows.append({
+            "test": test,
+            "slow_path": slow_path,
+            "slow_val": slow,
+            "fast_path": "cross" if slow_path == "same" else "same",
+            "fast_val": fast,
+            "fast_frac": fast / slow
+        })
+
+    summary = pd.DataFrame(rows).sort_values("test")
+    x = np.arange(len(summary))
+    width = 0.7
+
+    plt.figure(figsize=(14, 6))
+
+    # draw slower path (full height = 1.0)
+    for i, row in summary.iterrows():
+        color = "orange" if row["slow_path"] == "same" else "blue"
+        xpos = x[list(summary.index).index(i)]
+        plt.bar(
+            xpos,
+            1.0,
+            width=width,
+            color=color
+        )
+        # place slower bar annotation near top of the bar
+        plt.text(
+            xpos,
+            0.95,  # slightly below top
+            f"{row['slow_val']:.1f}",
+            ha="center",
+            va="top",
+            rotation=90,
+            fontsize=8,
+            color="white" if row["slow_val"] / 1.0 > 0.3 else "black"
+        )
+
+    # draw faster path (shorter bar)
+    for i, row in summary.iterrows():
+        color = "blue" if row["fast_path"] == "cross" else "orange"
+        xpos = x[list(summary.index).index(i)]
+        plt.bar(
+            xpos,
+            row["fast_frac"],
+            width=width,
+            color=color
+        )
+        # place faster bar annotation near bottom of the bar
+        plt.text(
+            xpos,
+            row["fast_frac"] * 0.05 + 0.02,  # small offset above bottom
+            f"{row['fast_val']:.1f}",
+            ha="center",
+            va="bottom",
+            rotation=90,
+            fontsize=8,
+            color="white" if row["fast_frac"] > 0.3 else "black"
+        )
+
+    plt.xticks(x, summary["test"], rotation=90)
+    plt.ylabel("Latency Factor (Faster / Slower)")
+    plt.yticks(np.arange(0, 1.1, 0.1))  # 0, 0.1, 0.2, ..., 1.0
+    plt.xlabel("Instruction")
+    plt.ylim(0, 1.1)
+    plt.title("Same-Socket vs Cross-Socket Average Latency")
+
+    from matplotlib.patches import Patch
+    plt.legend(handles=[
+        Patch(color="orange", label="Same Socket"),
+        Patch(color="blue", label="Cross Socket"),
+    ])
+
+    plt.tight_layout()
+    plt.savefig("./socket_latency_relative.png")
+
 
 
 
 #benchmark_tests()
 print("\n")
 #benchmark_core_placement()
-visualise_latency()
-
+#visualise_latency()
+visualise_socket_latency_comparison_normalised()
